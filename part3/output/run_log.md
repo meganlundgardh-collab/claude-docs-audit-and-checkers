@@ -2,9 +2,9 @@
 
 Written by hand after reading through the actual findings, not auto-generated. This is where the "a few checker mistakes" the assignment explicitly asked for actually get looked at, rather than just tolerated in aggregate.
 
-Run: 50 pages scanned, 262 internal links extracted → 3 BROKEN, 85 ANCHOR_MISMATCH, 0 UNINDEXED, 0 UNVERIFIED, 174 OK.
+Run: 50 pages scanned, 262 internal links extracted → 0 BROKEN, 85 ANCHOR_MISMATCH, 3 UNINDEXED, 0 UNVERIFIED, 174 OK.
 
-**This is the third run.** The first extracted only 164 links (fragment links were invisible). The second fixed that but compared every fragment link's anchor text against its target's whole-page title, producing a new, structural false-positive pattern. This run fixes that too, where the data exists to fix it. See "What changed in this rerun" (the fragment-extraction fix) and "What changed in the third run" (the section-heading fix), below.
+**This is the fourth run.** The first extracted only 164 links (fragment links were invisible). The second fixed that but compared every fragment link's anchor text against its target's whole-page title, producing a new, structural false-positive pattern. The third fixed that too, where the data exists to fix it — see "What changed in this rerun" (the fragment-extraction fix) and "What changed in the third run" (the section-heading fix), below. This run adds one override (`/cowork/3p/extensions`, see "What changed in the fourth run," at the end) that moves the three `/docs/cowork/3p/extensions` links from a false `BROKEN` to the correct `UNINDEXED` — the counts above reflect that fix; every other bucket is unchanged from the third run.
 
 ## What changed in this rerun (fragment-link fix)
 
@@ -30,7 +30,7 @@ Read through the 14 heading-compared ANCHOR_MISMATCH flags by hand, same as the 
 
 Left as a known limitation, not fixed further: (1) the 49-link page-title fallback, which needs a bigger scrape to close, not a code change; (2) the generic-anchor-to-specific-subsection pattern just above, which no similarity metric resolves — it needs a human, the same conclusion `run_log.md`'s original Group B reached about page-level terminology drift.
 
-All three are `/docs/cowork/3p/extensions`, linked from `cowork/guide/plugins.md`, and all three are exactly Part 1's finding #2: a link to a path that was renamed/never existed as written. Each one correctly resolves a "did you mean" suggestion of `/third-party/claude-desktop/extensions` (anchor text `'MCP, plugins, skills, and hooks'` on both sides, overlap 1.0 — about as confident a suggestion as this metric can produce). This is the checker doing its job: it caught all three instances on the same page, which is exactly what a human skim missed the first time around (Part 1's original finding said "twice"; a fresh fetch during red-teaming found three).
+All three were, on the third run, classified `BROKEN` and reported here as "a link to a path that was renamed/never existed as written." **That line was wrong, and is corrected in the fourth run — see "What changed in the fourth run," below.** `https://claude.com/docs/cowork/3p/extensions` resolves to full real content; the checker's index (`sitemap.xml` + `llms.txt`) just didn't have it, and nobody fetched the exact path directly before writing "never existed" as if it had been confirmed. All three are linked from `cowork/guide/plugins.md`, and all three are exactly Part 1's finding #2 (a fresh fetch during red-teaming found three instances, not the two the original finding said). What's still true from the original write-up: each one carries a "did you mean" suggestion of `/third-party/claude-desktop/extensions` (anchor text `'MCP, plugins, skills, and hooks'` on both sides, overlap 1.0) — but that's a plausible alternate destination, not evidence the written link is dead.
 
 ## The 28 ANCHOR_MISMATCH — a mix of real problems and checker limitations
 
@@ -51,6 +51,12 @@ This is a known, documented limitation, not an oversight: adding a stemmer (or a
 
 These four (and a few similar ones) are flagged here rather than folded silently into the "false positive" bucket, because they're the closest thing this run produced to genuinely new findings beyond what Part 1 already had — small, surface-level instances of the same drift pattern findings #2 and #3 already established, just not big enough on their own to warrant a numbered finding.
 
-## 0 UNINDEXED, 0 UNVERIFIED
+## 3 UNINDEXED, 0 UNVERIFIED
 
-No scraped page links to any of the 5 llms.txt/sitemap.xml-disagreement pages in `verified_overrides.json`, so these buckets are empty on this run — not because the logic is unused (see `checker/link_checker.py`'s classification comments), just because the 50-page sample didn't happen to link there. Worth noting explicitly rather than leaving silently zero: an empty bucket in one run is not the same claim as "this checker never finds anything here."
+The 3 UNINDEXED findings are the three `/cowork/3p/extensions` links, now correctly classified as real-but-unindexed instead of BROKEN — see "What changed in the fourth run," below. No scraped page links to any of the other 5 llms.txt/sitemap.xml-disagreement pages in `verified_overrides.json`, so those don't show up here; not because the logic is unused (see `checker/link_checker.py`'s classification comments), just because the 50-page sample didn't happen to link there. 0 UNVERIFIED is worth noting explicitly rather than leaving silently zero: an empty bucket in one run is not the same claim as "this checker never finds anything here."
+
+## What changed in the fourth run (the `/cowork/3p/extensions` false BROKEN)
+
+An independent review pass on 2026-09-19 checked the third run's BROKEN verdicts against a live fetch rather than against this file's own prior write-up, and found one wrong: `https://claude.com/docs/cowork/3p/extensions` returns full real content (titled "MCP, plugins, skills, and hooks," the exact page cowork/guide/plugins.md's anchor text names). The checker's `BROKEN` classification came entirely from the target not being in `sitemap.xml`, `llms.txt`, or `verified_overrides.json` — the same "unindexed, not dead" situation as the five pages already in `verified_overrides.json`, just never checked against that file because nobody had added it there yet. Added it now, with the live-fetch evidence, in `data/verified_overrides.json`. Rerunning `link_checker.py` moved all three instances from `BROKEN` to `UNINDEXED`, and nothing else in the run changed (verified: `ANCHOR_MISMATCH`, `OK`, and `UNVERIFIED` counts are identical to the third run).
+
+Worth stating plainly rather than quietly fixing: this file's own third-run write-up asserted "a link to a path that was renamed/never existed as written" as if it had been confirmed, when it had only been inferred from an index lookup. That's the exact mistake `README.md`'s tolerance-threshold section warns about — a single unverified inference reported as settled fact — just committed here instead of by a live web-fetch tool. The fix is the same either way: verify before reporting BROKEN, every time, including when the "check" is just "it's not in the index."

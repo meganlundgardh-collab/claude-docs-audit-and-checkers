@@ -19,5 +19,9 @@
   "/third-party/claude-desktop/mcp-sign-in": {
     "verified_live": true,
     "evidence": "WebFetch returned full real content on 2026-09-17 ('Set up sign-in for managed MCP servers'). Live and real, missing from sitemap.xml."
+  },
+  "/cowork/3p/extensions": {
+    "verified_live": true,
+    "evidence": "CORRECTED 2026-09-19: link_checker.py's first run classified all three /docs/cowork/3p/extensions links on cowork/guide/plugins.md as BROKEN ('target path not found'), and run_log.md's write-up went further, calling it 'a path that was renamed/never existed as written' -- an inference, never actually confirmed by a live fetch. It was wrong. WebFetch on https://claude.com/docs/cowork/3p/extensions returned full real content, titled 'MCP, plugins, skills, and hooks' -- the same page cowork/guide/plugins.md's anchor text names, and the same content Part 1 finding #2 describes ('scoped to Claude Desktop on third-party gateways'). The page is real; it's just missing from sitemap.xml and llms.txt, same pattern as the five entries above, not a dead or renamed link. Finding #2's actual point stands unchanged: it sends Cowork admins to the wrong deployment model's docs. But that's a wrong-destination problem, not a broken-link problem, and the link_checker's BROKEN verdict conflated the two. See run_log.md and part1-audit-memo.md's red-team log for the corrected framing -- this is the same 'a single unverified inference stated as fact' mistake as the /third-party/claude-desktop/models entry above, caught the same way: by actually fetching the page instead of trusting the checker's index lookup."
   }
 }

@@ -21,6 +21,8 @@
 
 While building the manual overrides for index discrepancies, an automated fetch flagged third-party/claude-desktop/models as a 404. However, a manual check in my browser confirmed the page was live — the error was likely a stale cache entry or a tool-specific quirk on that route. This direct experience provided the answer to the assignment's evaluation question: a single automated fetch returning an error is never proof a link is dead. This checker's own data-prep process produced a false positive from exactly that mistake, twice, within the same hour.
 
+A second, closer-to-home instance of the same mistake: the checker itself classified all three `/cowork/3p/extensions` links on `cowork/guide/plugins.md` as `BROKEN`, and `run_log.md`'s hand-written commentary asserted the path was "renamed or never existed" — an inference from the target not being in either index, never actually confirmed by fetching it. It was wrong; the page resolves to full real content, just missing from both indexes. Caught during an independent review pass on 2026-09-19, not by this checker's own logic — see `run_log.md`'s "What changed in the fourth run" for the fix. Kept in, not scrubbed out, for the same reason the assignment asks for checker mistakes at all: this is the more instructive failure of the two, since it's the automated classification getting it wrong, not just a flaky manual fetch during data prep.
+
 - **Tolerance threshold:** For a BROKEN verdict, the cost of being wrong is asymmetric, so my tolerance is near-zero — under 5% of BROKEN verdicts should turn out to be false. A false BROKEN sends people chasing ghost links; if that happens frequently, users stop trusting the output entirely. This run's own false-404 incident (below) shows how easily a single bad fetch clears that bar on its own, which is why production versions must implement retry/backoff logic (e.g., requiring two failures on different days to rule out transient outages) before surfacing a page as dead.
 
 - **A softer signal:** ANCHOR_MISMATCH is explicitly a human-in-the-loop "go look at this" signal, so the tolerance is much higher — I'd accept roughly a third of flags being noise (this run landed at 85/262, about 32%), provided the sources of that noise are documented. (For example, reading through this run's 85 mismatches revealed they were a mix of missing stemming steps, generic anchors pointing to specific subsections, and out-of-sample fallback comparisons—not metric weaknesses).
@@ -36,7 +38,7 @@ Each internal link on each scraped page gets exactly one status:
 | Status | Meaning |
 |---|---|
 | `BROKEN` | Target isn't a real page in either index or the verified-overrides fallback. Attaches a "did you mean" suggestion when the anchor text closely resembles another real page's title. |
-| `UNINDEXED` | Target is a real, live page but missing from `llms.txt` — Part 1 finding #3's original pattern, generalized (empty on this run; see `run_log.md`). |
+| `UNINDEXED` | Target is a real, live page but missing from `llms.txt` — Part 1 finding #3's original pattern, generalized (3 on this run — the `/cowork/3p/extensions` links, corrected from a false `BROKEN`; see `run_log.md`). |
 | `ANCHOR_MISMATCH` | Target resolves and its real title is known, but the anchor text doesn't look like that title (or, for a `#fragment` link into one of the 50 scraped pages, doesn't look like the heading of the section the fragment targets — see "Anchor-title similarity," below). |
 | `UNVERIFIED` | Target resolves but no title is available to compare against (not in `llms.txt`, not one of the 50 scraped pages) — deliberately *not* counted as a pass. A checker that reports "OK" when it actually has no data would be worse than one that says "can't tell." |
 | `OK` | Target resolves and anchor text matches its title. |
@@ -57,6 +59,8 @@ This covers semantic_drift_checker.py (rules 1 & 5). Evaluating whether a senten
 
 - **Regex widening (Stage A):** The initial extraction regex required an article ("a/an"), which missed modifier-led definitions. Widening the regex—and patching a Markdown trailing-backslash bug that was silently fusing sentences together—surfaced previously hidden candidates, including the correctly-handled Claude Tag edge cases.
 
+- **A DRIFT verdict's direction isn't automatically "canonical is right" (caught 2026-09-19, after submission):** Two of this run's DRIFT verdicts flagged `government/desktop/plugins.md` for mentioning "hooks," a component canonical `plugins/overview.md` doesn't list. The write-up initially treated that as Government being wrong. A live cross-check of `cowork/guide/plugins.md` — a third, independent surface page — found it also lists Hooks as a real component, which is better evidence canonical is the stale page than that Government invented one. The mechanical Rule 1 verdict (local text disagrees with canonical) is still correct and still worth flagging; only the narrative about which side to fix was wrong. See `output/semantic_drift_findings.md`, "what changed in the fifth pass," for the full correction — left in rather than quietly rewritten, same principle as the link checker's false-BROKEN case above.
+
 ## Evaluating the semantic checker
 
 - **Defining false-positive tolerance:** A false DRIFT verdict is high-cost; sending a docs team to edit content that was never wrong burns trust capital quickly. My tolerance is under 10% — tighter than ANCHOR_MISMATCH's, since DRIFT triggers an actual edit request rather than just a look. The concrete mechanism that keeps the rate under that bar isn't a confidence threshold on the model's output — it's the DISTINCT_CONCEPT bucket, which ensures the checker isn't forced to mislabel valid domain distinctions as drift in the first place.
@@ -70,7 +74,7 @@ This covers semantic_drift_checker.py (rules 1 & 5). Evaluating whether a senten
 - `checker/build_page_index.py` — builds `data/known_pages.json` from `sitemap-urls.txt` + `llms-txt-raw.txt`.
 - `checker/link_checker.py` — Rule 3 checker; run this for link validity.
 - `checker/semantic_drift_checker.py` — Rule 1 checker; run this for definition drift. See "Second module," above.
-- `data/verified_overrides.json` — hand-verified live status for the 5 pages the two indexes disagree on, including the `models` false-404 incident described above.
+- `data/verified_overrides.json` — hand-verified live status for the 6 pages the two indexes disagree on (or, for `/cowork/3p/extensions`, both indexes miss), including the `models` false-404 incident described above and the checker's own false-BROKEN verdict on `/cowork/3p/extensions` (see `run_log.md`).
 - `scrape/` — 50 verbatim page snapshots (WebFetch, literal-content prompts; see the environment-constraint note above).
 - `output/findings.json` — structured output of the last `link_checker.py` run.
 - `output/run_log.md` — hand-annotated read-through of that run's actual findings, including which ANCHOR_MISMATCH flags look like real problems vs. checker artifacts.

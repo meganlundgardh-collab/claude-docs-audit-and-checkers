@@ -2957,24 +2957,16 @@
     "anchor_text": "MCP, plugins, skills, and hooks",
     "href": "/docs/cowork/3p/extensions",
     "resolved_target": "/cowork/3p/extensions",
-    "status": "BROKEN",
-    "reason": "Target path not found in sitemap.xml, llms.txt, or verified_overrides.json.",
-    "did_you_mean": {
-      "title": "MCP, plugins, skills, and hooks",
-      "path": "/third-party/claude-desktop/extensions"
-    }
+    "status": "UNINDEXED",
+    "reason": "Target verified live by hand; missing from both sitemap.xml and llms.txt."
   },
   {
     "source_page": "/cowork/guide/plugins",
     "anchor_text": "MCP, plugins, skills, and hooks",
     "href": "/docs/cowork/3p/extensions",
     "resolved_target": "/cowork/3p/extensions",
-    "status": "BROKEN",
-    "reason": "Target path not found in sitemap.xml, llms.txt, or verified_overrides.json.",
-    "did_you_mean": {
-      "title": "MCP, plugins, skills, and hooks",
-      "path": "/third-party/claude-desktop/extensions"
-    }
+    "status": "UNINDEXED",
+    "reason": "Target verified live by hand; missing from both sitemap.xml and llms.txt."
   },
   {
     "source_page": "/cowork/guide/plugins",
@@ -3005,12 +2997,8 @@
     "anchor_text": "MCP, plugins, skills, and hooks",
     "href": "/docs/cowork/3p/extensions",
     "resolved_target": "/cowork/3p/extensions",
-    "status": "BROKEN",
-    "reason": "Target path not found in sitemap.xml, llms.txt, or verified_overrides.json.",
-    "did_you_mean": {
-      "title": "MCP, plugins, skills, and hooks",
-      "path": "/third-party/claude-desktop/extensions"
-    }
+    "status": "UNINDEXED",
+    "reason": "Target verified live by hand; missing from both sitemap.xml and llms.txt."
   },
   {
     "source_page": "/government/desktop/plugins",
